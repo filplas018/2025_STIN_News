@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>StockController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">STIN_News</a> &gt; <a href="index.source.html" class="el_package">controllers</a> &gt; <span class="el_source">StockController.java</span></div><h1>StockController.java</h1><pre class="source lang-java linenums">package controllers;
+
+import dtos.StockQueryDto;
+import models.ApplicationUser;
+import models.Stock;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.*;
+import repositories.StockRepository;
+import services.UserService;
+
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+@Controller
+@RequestMapping(&quot;/api/stocks&quot;)
+public class StockController {
+
+    private final UserService userService;
+    private final StockRepository stockRepository;
+
+
+<span class="fc" id="L27">    private static final Logger logger = LoggerFactory.getLogger(SentimentController.class);</span>
+
+<span class="fc" id="L29">    public StockController(UserService userService, StockRepository stockRepository) {</span>
+<span class="fc" id="L30">        this.userService = userService;</span>
+<span class="fc" id="L31">        this.stockRepository = stockRepository;</span>
+<span class="fc" id="L32">    }</span>
+
+    @GetMapping({&quot;&quot;, &quot;/list&quot;})
+    public String showStocks(Model model) {
+<span class="fc" id="L36">        String email = SecurityContextHolder.getContext().getAuthentication().getName();</span>
+<span class="fc" id="L37">        List&lt;Stock&gt; stocks = userService.getUserStocks(email);</span>
+<span class="fc" id="L38">        model.addAttribute(&quot;stocks&quot;, stocks);</span>
+<span class="fc" id="L39">        model.addAttribute(&quot;stockName&quot;, &quot;&quot;);</span>
+<span class="fc" id="L40">        return &quot;stocks&quot;;</span>
+    }
+
+    @GetMapping({&quot;favourite&quot;, &quot;/list/favourite&quot;})
+    public String showFavouriteStocks(Model model) {
+<span class="fc" id="L45">        String email = SecurityContextHolder.getContext().getAuthentication().getName();</span>
+<span class="fc" id="L46">        List&lt;Stock&gt; favouriteStocks = userService.getUserFavouriteStocks(email); // &lt;-- změněno</span>
+<span class="fc" id="L47">        model.addAttribute(&quot;stocks&quot;, favouriteStocks);</span>
+<span class="fc" id="L48">        model.addAttribute(&quot;stockName&quot;, &quot;&quot;);</span>
+<span class="fc" id="L49">        return &quot;favourite-stocks&quot;;</span>
+    }
+
+    @PostMapping(&quot;/add&quot;)
+    public String addStock(@RequestParam String stockName, Model model) {
+<span class="fc" id="L54">        String email = SecurityContextHolder.getContext().getAuthentication().getName();</span>
+        try {
+<span class="fc" id="L56">            userService.addStockToUser(email, stockName);</span>
+<span class="fc" id="L57">            return &quot;redirect:/stocks&quot;;</span>
+<span class="fc" id="L58">        } catch (RuntimeException e) {</span>
+<span class="fc" id="L59">            model.addAttribute(&quot;error&quot;, e.getMessage());</span>
+<span class="fc" id="L60">            model.addAttribute(&quot;stockName&quot;, stockName);</span>
+<span class="fc" id="L61">            model.addAttribute(&quot;stocks&quot;, userService.getUserStocks(email));</span>
+<span class="fc" id="L62">            return &quot;/api/stocks&quot;;</span>
+        }
+    }
+
+    @PostMapping(&quot;/update/{id}&quot;)
+    public String updateStockStatus(
+            @PathVariable Long id,
+            @RequestParam(required = false) Boolean isSold, // Volitelné parametry
+            @RequestParam(required = false) Boolean isFavourite,
+            Model model) {
+
+<span class="fc" id="L73">        String email = SecurityContextHolder.getContext().getAuthentication().getName();</span>
+
+        try {
+<span class="fc" id="L76">            Stock stock = stockRepository.findById(id)</span>
+<span class="pc" id="L77">                    .orElseThrow(() -&gt; new RuntimeException(&quot;Stock not found: &quot; + id));</span>
+
+            // Zkontroluj, zda uživatel vlastní tuto akcii
+<span class="pc bpc" id="L80" title="1 of 4 branches missed.">            if (stock.getUser() == null || !stock.getUser().getEmail().equals(email)) {</span>
+<span class="fc" id="L81">                throw new RuntimeException(&quot;Unauthorized access to stock: &quot; + id);</span>
+            }
+
+            // Pokud je parametr isSold přítomen, aktualizuj hodnotu isSold
+<span class="pc bpc" id="L85" title="1 of 2 branches missed.">            if (isSold != null) {</span>
+<span class="fc" id="L86">                stock.setSold(isSold);</span>
+            }
+
+            // Pokud je parametr isFavourite přítomen, aktualizuj hodnotu isFavourite
+<span class="pc bpc" id="L90" title="1 of 2 branches missed.">            if (isFavourite != null) {</span>
+<span class="fc" id="L91">                stock.setFavourite(isFavourite);</span>
+            }
+
+            // Ulož změny do databáze
+<span class="fc" id="L95">            stockRepository.save(stock);</span>
+
+<span class="fc" id="L97">            return &quot;redirect:/api/stocks&quot;; // Přesměrování na seznam akcií</span>
+<span class="fc" id="L98">        } catch (RuntimeException e) {</span>
+<span class="fc" id="L99">            model.addAttribute(&quot;error&quot;, e.getMessage());</span>
+<span class="fc" id="L100">            model.addAttribute(&quot;stockName&quot;, &quot;&quot;);</span>
+<span class="fc" id="L101">            model.addAttribute(&quot;stocks&quot;, userService.getUserStocks(email));</span>
+<span class="fc" id="L102">            return &quot;stocks&quot;;</span>
+        }
+    }
+
+    @PostMapping(&quot;/updateFromApi&quot;)
+    @ResponseBody
+    public String updateFromApi(@RequestBody List&lt;Map&lt;String, Object&gt;&gt; recommendations) {
+<span class="fc" id="L109">        List&lt;ApplicationUser&gt; users = userService.getAllUsersEntity();</span>
+<span class="fc" id="L110">        int processedRecommendations = 0;</span>
+<span class="fc" id="L111">        int skippedRecommendations = 0;</span>
+
+<span class="fc" id="L113">        List&lt;Map&lt;String, Object&gt;&gt; validRecommendations = recommendations.stream()</span>
+<span class="pc bpc" id="L114" title="1 of 2 branches missed.">                .filter(rec -&gt; rec != null)</span>
+<span class="fc" id="L115">                .collect(Collectors.toList());</span>
+
+<span class="fc bfc" id="L117" title="All 2 branches covered.">        for (ApplicationUser user : users) {</span>
+<span class="fc" id="L118">            List&lt;Stock&gt; userStocks = stockRepository.findByUser(user);</span>
+
+<span class="fc bfc" id="L120" title="All 2 branches covered.">            for (Map&lt;String, Object&gt; rec : validRecommendations) {</span>
+<span class="fc" id="L121">                String name = (String) rec.get(&quot;name&quot;);</span>
+<span class="fc" id="L122">                int sell = (int) rec.get(&quot;sell&quot;);</span>
+
+<span class="fc bfc" id="L124" title="All 2 branches covered.">                if (sell == 1) {</span>
+                    // Prodej
+<span class="fc" id="L126">                    userStocks.stream()</span>
+<span class="pc bpc" id="L127" title="2 of 4 branches missed.">                            .filter(s -&gt; s.getName().equalsIgnoreCase(name) &amp;&amp; !s.isSold())</span>
+<span class="fc" id="L128">                            .forEach(s -&gt; {</span>
+<span class="fc" id="L129">                                s.setSold(true);</span>
+<span class="fc" id="L130">                                stockRepository.save(s);</span>
+<span class="fc" id="L131">                            });</span>
+<span class="fc" id="L132">                    processedRecommendations++;</span>
+<span class="pc bpc" id="L133" title="1 of 2 branches missed.">                } else if (sell == 0) {</span>
+                    // Nákup
+<span class="fc" id="L135">                    boolean alreadyHas = userStocks.stream()</span>
+<span class="pc bpc" id="L136" title="3 of 4 branches missed.">                            .anyMatch(s -&gt; s.getName().equalsIgnoreCase(name) &amp;&amp; !s.isSold());</span>
+<span class="pc bpc" id="L137" title="1 of 2 branches missed.">                    if (!alreadyHas) {</span>
+<span class="fc" id="L138">                        Stock newStock = new Stock(name, false, user);</span>
+<span class="fc" id="L139">                        stockRepository.save(newStock);</span>
+<span class="fc" id="L140">                        processedRecommendations++;</span>
+                    }
+                }
+<span class="fc" id="L143">            }</span>
+<span class="fc" id="L144">        }</span>
+
+<span class="fc" id="L146">        logger.info(&quot;Zpracováno {} doporučení, přeskočeno {} neplatných doporučení.&quot;, processedRecommendations, skippedRecommendations);</span>
+<span class="fc" id="L147">        return String.format(&quot;Stocks updated for all users. Processed %d recommendations, skipped %d invalid ones.&quot;, processedRecommendations, skippedRecommendations);</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

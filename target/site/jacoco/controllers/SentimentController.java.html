@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SentimentController.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">STIN_News</a> &gt; <a href="index.source.html" class="el_package">controllers</a> &gt; <span class="el_source">SentimentController.java</span></div><h1>SentimentController.java</h1><pre class="source lang-java linenums">package controllers;
+
+import dtos.StockQueryDto;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.web.bind.annotation.*;
+
+import reactor.core.publisher.Mono;
+import repositories.StockSentimentRepository;
+import services.NewsEvaluationService;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
+@RestController
+@RequestMapping(&quot;/api/sentiment&quot;)
+public class SentimentController {
+
+<span class="fc" id="L20">    private static final Logger logger = LoggerFactory.getLogger(SentimentController.class);</span>
+    private final NewsEvaluationService newsEvaluationService;
+
+    private final StockSentimentRepository stockSentimentRepository;
+
+    @Value(&quot;${alpha_vantage.api.key}&quot;)
+    private String apiKey;
+
+<span class="fc" id="L28">    public SentimentController(NewsEvaluationService newsEvaluationService, StockSentimentRepository stockSentimentRepository) {</span>
+<span class="fc" id="L29">        this.newsEvaluationService = newsEvaluationService;</span>
+<span class="fc" id="L30">        this.stockSentimentRepository = stockSentimentRepository;</span>
+<span class="fc" id="L31">    }</span>
+
+    // Jednoduchý POST endpoint, který přijme seznam tickerů
+    /*@PostMapping(&quot;/evaluate&quot;)
+    public Mono&lt;Void&gt; evaluateSentiment(@RequestBody List&lt;String&gt; tickers) {
+        return newsEvaluationService.evaluateAndStoreNews(tickers);
+    }*/
+
+    @PostMapping(&quot;/evaluate&quot;)
+    public Mono&lt;Void&gt; evaluateSentiment(@RequestBody List&lt;StockQueryDto&gt; stockQueryDtos) {
+<span class="fc" id="L41">        return newsEvaluationService.evaluateAndStoreNews(stockQueryDtos); // Předáváme seznam DTO</span>
+    }
+    @PostMapping(&quot;/ratings&quot;)
+    public Mono&lt;List&lt;StockQueryDto&gt;&gt; getRatings(@RequestBody List&lt;StockQueryDto&gt; queries) {
+<span class="fc" id="L45">        List&lt;StockQueryDto&gt; validQueries = queries.stream()</span>
+<span class="fc bfc" id="L46" title="All 2 branches covered.">                .filter(query -&gt; query != null) // Odfiltrujeme neúspěšně zdeserializované (null) prvky</span>
+<span class="fc" id="L47">                .collect(Collectors.toList());</span>
+
+<span class="fc" id="L49">        logger.info(&quot;Počet validních dotazů k vyhodnocení: {}&quot;, validQueries.size());</span>
+
+<span class="fc" id="L51">        return newsEvaluationService.getRatingsForQueries(validQueries);</span>
+    }
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

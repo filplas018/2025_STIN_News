@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>StockQueryDtoDeserializer.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">STIN_News</a> &gt; <a href="index.source.html" class="el_package">services</a> &gt; <span class="el_source">StockQueryDtoDeserializer.java</span></div><h1>StockQueryDtoDeserializer.java</h1><pre class="source lang-java linenums">package services;
+
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.JsonDeserializer;
+import com.fasterxml.jackson.databind.JsonNode;
+import dtos.StockQueryDto;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+
+<span class="fc" id="L14">public class StockQueryDtoDeserializer extends JsonDeserializer&lt;StockQueryDto&gt; {</span>
+
+<span class="fc" id="L16">    private static final Logger logger = LoggerFactory.getLogger(StockQueryDtoDeserializer.class);</span>
+
+    @Override
+    public StockQueryDto deserialize(JsonParser p, DeserializationContext ctxt) throws IOException, JsonProcessingException {
+<span class="fc" id="L20">        JsonNode node = p.getCodec().readTree(p);</span>
+<span class="fc" id="L21">        StockQueryDto dto = new StockQueryDto();</span>
+<span class="fc" id="L22">        boolean hasErrors = false;</span>
+
+        // Parsování name
+<span class="fc" id="L25">        JsonNode nameNode = node.get(&quot;name&quot;);</span>
+<span class="fc bfc" id="L26" title="All 2 branches covered.">        if (nameNode != null) {</span>
+<span class="fc bfc" id="L27" title="All 2 branches covered.">            if (nameNode.isTextual()) {</span>
+<span class="fc" id="L28">                String name = nameNode.asText();</span>
+<span class="fc bfc" id="L29" title="All 2 branches covered.">                if (!name.isEmpty()) {</span>
+<span class="fc" id="L30">                    dto.setName(name);</span>
+                } else {
+<span class="fc" id="L32">                    logger.warn(&quot;Pole 'name' je prázdné, nastavuji na null.&quot;);</span>
+<span class="fc" id="L33">                    dto.setName(null);</span>
+<span class="fc" id="L34">                    hasErrors = true;</span>
+                }
+<span class="fc" id="L36">            } else {</span>
+<span class="fc" id="L37">                logger.warn(&quot;Pole 'name' má nesprávný typ (očekáván String), nastavuji na null.&quot;);</span>
+<span class="fc" id="L38">                dto.setName(null);</span>
+<span class="fc" id="L39">                hasErrors = true;</span>
+            }
+        } else {
+<span class="fc" id="L42">            logger.warn(&quot;Pole 'name' chybí, nastavuji na null.&quot;);</span>
+<span class="fc" id="L43">            dto.setName(null);</span>
+<span class="fc" id="L44">            hasErrors = true;</span>
+        }
+
+        // Parsování date
+<span class="fc" id="L48">        JsonNode dateNode = node.get(&quot;date&quot;);</span>
+<span class="fc bfc" id="L49" title="All 2 branches covered.">        if (dateNode != null) {</span>
+<span class="fc bfc" id="L50" title="All 2 branches covered.">            if (dateNode.isNumber()) {</span>
+                try {
+<span class="fc" id="L52">                    dto.setDate(dateNode.asLong());</span>
+<span class="nc" id="L53">                } catch (Exception e) {</span>
+<span class="nc" id="L54">                    logger.warn(&quot;Chyba při převodu 'date' na long ({}), nastavuji na 0.&quot;, dateNode.asText());</span>
+<span class="nc" id="L55">                    dto.setDate(0);</span>
+<span class="nc" id="L56">                    hasErrors = true;</span>
+<span class="pc" id="L57">                }</span>
+<span class="fc bfc" id="L58" title="All 2 branches covered.">            } else if (dateNode.isTextual()) {</span>
+                try {
+<span class="fc" id="L60">                    dto.setDate(Long.parseLong(dateNode.asText()));</span>
+<span class="fc" id="L61">                } catch (NumberFormatException e) {</span>
+<span class="fc" id="L62">                    logger.warn(&quot;Pole 'date' má nesprávný formát ({}), očekáváno číslo (long), nastavuji na 0.&quot;, dateNode.asText());</span>
+<span class="fc" id="L63">                    dto.setDate(0);</span>
+<span class="fc" id="L64">                    hasErrors = true;</span>
+<span class="fc" id="L65">                }</span>
+            } else {
+<span class="fc" id="L67">                logger.warn(&quot;Pole 'date' má nesprávný typ (očekáváno číslo nebo text), nastavuji na 0.&quot;);</span>
+<span class="fc" id="L68">                dto.setDate(0);</span>
+<span class="fc" id="L69">                hasErrors = true;</span>
+            }
+        } else {
+<span class="fc" id="L72">            logger.warn(&quot;Pole 'date' chybí, nastavuji na 0.&quot;);</span>
+<span class="fc" id="L73">            dto.setDate(0);</span>
+<span class="fc" id="L74">            hasErrors = true;</span>
+        }
+
+        // Parsování rating
+<span class="fc" id="L78">        JsonNode ratingNode = node.get(&quot;rating&quot;);</span>
+<span class="fc bfc" id="L79" title="All 4 branches covered.">        dto.setRating(ratingNode != null &amp;&amp; ratingNode.isInt() ? ratingNode.asInt() : 0);</span>
+
+<span class="fc bfc" id="L81" title="All 2 branches covered.">        return hasErrors ? null : dto;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>NewsScheduler.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">STIN_News</a> &gt; <a href="index.source.html" class="el_package">services</a> &gt; <span class="el_source">NewsScheduler.java</span></div><h1>NewsScheduler.java</h1><pre class="source lang-java linenums">package services;
+
+import config.SchedulingConfig;
+import dtos.StockQueryDto;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Component;
+import java.util.List;
+import java.util.stream.Collectors;
+
+@Component
+public class NewsScheduler {
+
+    private final NewsEvaluationService newsEvaluationService;
+    private final SchedulingConfig stockConfig; // Změna na final a injekce v konstruktoru
+
+    // Konstruktor pro injektování NewsEvaluationService a SchedulingConfig
+<span class="fc" id="L17">    public NewsScheduler(NewsEvaluationService newsEvaluationService, SchedulingConfig stockConfig) {</span>
+<span class="fc" id="L18">        this.newsEvaluationService = newsEvaluationService;</span>
+<span class="fc" id="L19">        this.stockConfig = stockConfig;</span>
+<span class="fc" id="L20">    }</span>
+
+    // Naplánovaná metoda, která se spustí každých 12 hodin
+    @Scheduled(cron = &quot;0 0 */12 * * *&quot;)
+    public void evaluateAndStoreNewsEvery12Hours() {
+        // Zde musíš načíst data pro `StockQueryDto`
+<span class="nc" id="L26">        List&lt;StockQueryDto&gt; stockQueryDtos = loadStockQueryDtos();</span>
+
+        // Zavolání metody pro zpracování a uložení dat
+<span class="nc" id="L29">        newsEvaluationService.evaluateAndStoreNews(stockQueryDtos)</span>
+<span class="nc" id="L30">                .subscribe(); // Spustí asynchronně</span>
+<span class="nc" id="L31">    }</span>
+
+
+    // Tuto metodu implementuj podle potřeby (např. načtení dat z databáze nebo jiného zdroje)
+    public List&lt;StockQueryDto&gt; loadStockQueryDtos() {
+        // Načtení seznamu tickerů z konfigurace
+<span class="fc" id="L37">        List&lt;String&gt; tickers = stockConfig.getTickers();</span>
+
+        // Vytvoření seznamu StockQueryDto na základě tickerů
+<span class="fc" id="L40">        return tickers.stream()</span>
+<span class="fc" id="L41">                .map(ticker -&gt; {</span>
+                    // Vytváření nového StockQueryDto pro každý ticker
+<span class="fc" id="L43">                    StockQueryDto dto = new StockQueryDto();</span>
+<span class="fc" id="L44">                    dto.setName(ticker);</span>
+<span class="fc" id="L45">                    dto.setDate(System.currentTimeMillis()); // Používáme aktuální čas</span>
+<span class="fc" id="L46">                    return dto;</span>
+                })
+<span class="fc" id="L48">                .collect(Collectors.toList());</span>
+    }
+
+
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>

@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AlphaVantageClient.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">STIN_News</a> &gt; <a href="index.source.html" class="el_package">clients</a> &gt; <span class="el_source">AlphaVantageClient.java</span></div><h1>AlphaVantageClient.java</h1><pre class="source lang-java linenums">package clients;
+import lombok.RequiredArgsConstructor;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import reactor.util.retry.Retry;
+
+import java.time.Duration;
+import java.util.List;
+@Service
+@RequiredArgsConstructor
+public class AlphaVantageClient {
+
+<span class="fc" id="L20">    private static final Logger logger = LoggerFactory.getLogger(AlphaVantageClient.class);</span>
+
+    private final WebClient webClient;
+
+    @Value(&quot;${alpha_vantage.api.key}&quot;)
+    private String API_KEY;
+
+    @Value(&quot;${sentiment.attempts}&quot;)
+    private int ATTEMPTS;
+
+    @Value(&quot;${sentiment.attempts-delay}&quot;)
+    private int ATTEMPTS_DELAY;
+
+
+    public Mono&lt;String&gt; getCompanyNews(String ticker, String fromDateTime, String toDateTime, String sort, int limit) {
+<span class="fc" id="L35">        return webClient.get()</span>
+<span class="pc" id="L36">                .uri(uriBuilder -&gt; uriBuilder</span>
+<span class="nc" id="L37">                        .path(&quot;/query&quot;)</span>
+<span class="nc" id="L38">                        .queryParam(&quot;function&quot;, &quot;NEWS_SENTIMENT&quot;)</span>
+<span class="nc" id="L39">                        .queryParam(&quot;tickers&quot;, ticker)</span>
+<span class="nc" id="L40">                        .queryParam(&quot;time_from&quot;, fromDateTime)</span>
+<span class="nc" id="L41">                        .queryParam(&quot;time_to&quot;, toDateTime)</span>
+<span class="nc" id="L42">                        .queryParam(&quot;sort&quot;, sort)</span>
+<span class="nc" id="L43">                        .queryParam(&quot;limit&quot;, limit)</span>
+<span class="nc" id="L44">                        .queryParam(&quot;apikey&quot;, API_KEY)</span>
+<span class="nc" id="L45">                        .build())</span>
+<span class="fc" id="L46">                .retrieve()</span>
+<span class="fc" id="L47">                .bodyToMono(String.class)</span>
+<span class="fc" id="L48">                .retryWhen(</span>
+<span class="fc" id="L49">                        Retry.fixedDelay(ATTEMPTS, Duration.ofSeconds(ATTEMPTS_DELAY))</span>
+<span class="fc" id="L50">                                .filter(throwable -&gt; {</span>
+<span class="nc" id="L51">                                    logger.warn(&quot;Retrying after error: {}&quot;, throwable.getMessage());</span>
+<span class="nc" id="L52">                                    return true;</span>
+                                })
+                );
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.11.202310140853</span></div></body></html>
