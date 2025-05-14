@@ -1,0 +1,1 @@
+[![Codecov](https://codecov.io/gh/filplas018/2025_STIN_News/branch/main/graph/badge.svg)](https://codecov.io/gh/filplas018/2025_STIN_News)
