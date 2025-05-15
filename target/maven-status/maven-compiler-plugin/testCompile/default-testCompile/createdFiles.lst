@@ -15,3 +15,4 @@ com/example/stin_news/NewsSchedulerTest.class
 com/example/stin_news/RecommendationMapDeserializerTest.class
 com/example/stin_news/UserServiceImplTest.class
 com/example/stin_news/StockControllerTest.class
+com/example/stin_news/UserDetailsServiceTest.class
