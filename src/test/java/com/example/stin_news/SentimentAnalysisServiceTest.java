@@ -7,8 +7,10 @@ import dtos.StockSentimentDto;
 import models.StockSentiment;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
@@ -25,8 +27,7 @@ import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -78,6 +79,38 @@ class SentimentAnalysisServiceTest {
         double averageSentiment = sentimentAnalysisService.calculateAverageSentiment(feedNode, ticker);
 
         assertTrue(Double.isNaN(averageSentiment));
+    }
+
+    @Test
+    public void testProcessSentimentAndSave_whenNoSentimentScores_thenReturnsEmptyMono() throws Exception {
+        // Arrange
+        StockSentimentRepository mockRepo = mock(StockSentimentRepository.class);
+        SentimentAnalysisService service = new SentimentAnalysisService(mockRepo);
+
+        String jsonWithNoMatchingTicker = """
+            [
+              {
+                "ticker_sentiment": [
+                  {
+                    "ticker": "OTHER",
+                    "ticker_sentiment_score": 0.5
+                  }
+                ]
+              }
+            ]
+        """;
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        JsonNode feedNode = objectMapper.readTree(jsonWithNoMatchingTicker);
+        String ticker = "AAPL";  // Ticker, který se v datech nevyskytuje
+        LocalDateTime fromDateTime = LocalDateTime.now();
+
+        // Act
+        var resultMono = service.processSentimentAndSave(ticker, feedNode, fromDateTime);
+
+        // Assert
+        StepVerifier.create(resultMono)
+                .verifyComplete(); // Ověř, že Mono je prázdné (tj. vrátilo Mono.empty())
     }
 
    /* @Test
