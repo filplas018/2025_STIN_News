@@ -5,6 +5,13 @@ on: [push, pull_request]
 jobs:
   coverage:
     runs-on: ubuntu-latest
+    env:
+      AZURE_POSTGRESQL_PASSWORD: ${{ secrets.AZURE_POSTGRESQL_PASSWORD }}
+      AZURE_POSTGRESQL_USERNAME: ${{ secrets.AZURE_POSTGRESQL_USERNAME }}
+      AZURE_POSTGRESQL_URL: ${{ secrets.AZURE_POSTGRESQL_URL }}
+      AZURE_POSTGRESQL_RESOURCE_GROUP: ${{ secrets.AZURE_POSTGRESQL_RESOURCE_GROUP }}
+      AZURE_POSTGRESQL_SUBSCRIPTION_ID: ${{ secrets.AZURE_POSTGRESQL_SUBSCRIPTION_ID }}
+
     steps:
       - uses: actions/checkout@v3
       - name: List Environment Variables
