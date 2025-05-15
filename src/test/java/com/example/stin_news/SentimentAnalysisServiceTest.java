@@ -177,4 +177,38 @@ class SentimentAnalysisServiceTest {
 
         // Nezapomeňte, že tímto přepíšete skutečnou konfiguraci pro tento test
     }*/
+
+    @Test
+    void processSentimentAndSave_shouldHandleExceptionInSave() throws Exception {
+        // Arrange
+        String ticker = "AAPL";
+        LocalDateTime fromDate = LocalDateTime.now();
+
+        // Sestavíme validní feedNode s jedním článkem obsahujícím sentiment pro ticker
+        String json = """
+        [{
+            "ticker_sentiment": [{
+                "ticker": "AAPL",
+                "ticker_sentiment_score": "0.5"
+            }]
+        }]
+    """;
+        JsonNode feedNode = new ObjectMapper().readTree(json);
+
+        // Mockneš repository tak, aby vyhodil výjimku
+        doThrow(new RuntimeException("DB ERROR"))
+                .when(stockSentimentRepository)
+                .save(any(StockSentiment.class));
+
+        // Act
+        Mono<Void> result = sentimentAnalysisService.processSentimentAndSave(ticker, feedNode, fromDate);
+
+        // Assert
+        StepVerifier.create(result)
+                .verifyComplete(); // protože chyba je uvnitř Runnable a je zachycena, Mono stejně dokončí
+
+        // Můžeš zkontrolovat, že save byl zavolán
+        verify(stockSentimentRepository).save(any(StockSentiment.class));
+    }
+
 }
