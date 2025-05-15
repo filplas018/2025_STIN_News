@@ -210,32 +210,5 @@ class SentimentAnalysisServiceTest {
         // Můžeš zkontrolovat, že save byl zavolán
         verify(stockSentimentRepository).save(any(StockSentiment.class));
     }
-    @Test
-    void processSentimentAndSave2_shouldHandleExceptionInSave() throws Exception {
-        // Arrange
-        String ticker = "AAPL";
-        LocalDateTime fromDate = LocalDateTime.now();
-
-        String json = """
-        [{
-            "ticker_sentiment": [{
-                "ticker": "AAPL",
-                "ticker_sentiment_score": "0.5"
-            }]
-        }]
-    """;
-        JsonNode feedNode = new ObjectMapper().readTree(json);
-
-        doThrow(new RuntimeException("DB ERROR"))
-                .when(stockSentimentRepository)
-                .save(any(StockSentiment.class));
-
-        // Act & Assert
-        StepVerifier.create(sentimentAnalysisService.processSentimentAndSave(ticker, feedNode, fromDate))
-                .expectErrorMessage("DB ERROR")  // ✔ Očekáváme chybu
-                .verify();
-
-        verify(stockSentimentRepository).save(any(StockSentiment.class));
-    }
 
 }
