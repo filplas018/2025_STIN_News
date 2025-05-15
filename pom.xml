@@ -187,6 +187,7 @@
                                 <!-- Vyloučení specifických balíčků -->
                                 <exclude>**/com/example/stin_news/**</exclude>
 
+                                <exclude>**/config/**</exclude>
                                 <!-- <exclude>**/config/**</exclude> -->
 
                             </excludes>
@@ -213,6 +214,7 @@
                             <excludes>
                                 <!-- Vyloučení specifických balíčků -->
                                 <exclude>**/com/example/stin_news/**</exclude>
+                                <exclude>**/config/**</exclude>
 
                                 <!-- <exclude>**/config/**</exclude> -->
 
