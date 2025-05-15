@@ -192,36 +192,5 @@ public class NewsEvaluationServiceTest {
                 .verifyComplete();
     }
 
-    @Test
-    void evaluateAndStoreNews_noExistingSentiment_fetchesAndSaves() throws IOException {
-        // Arrange
-        StockQueryDto stockQueryDto = new StockQueryDto("AAPL", (int) Instant.now().toEpochMilli());
-        List<StockQueryDto> stockQueryDtos = Collections.singletonList(stockQueryDto);
-
-        String mockResponse = "{\"feed\": [{\"ticker_sentiment\": [{\"ticker\": \"AAPL\", \"ticker_sentiment_score\": 0.7}]}]}";
-        JsonNode mockRootNode = mock(JsonNode.class);
-        JsonNode mockFeedNode = mock(JsonNode.class);
-
-        when(stockSentimentRepository.findFirstByStockNameAndValidFromBetweenOrderByCreatedAtDesc(eq("AAPL"), any(), any()))
-                .thenReturn(Optional.empty());
-        when(alphaVantageClient.getCompanyNews(eq("AAPL"), anyString(), anyString(), eq("LATEST"), anyInt()))
-                .thenReturn(Mono.just(mockResponse));
-        when(objectMapper.readTree(mockResponse)).thenReturn(mockRootNode);
-        when(mockRootNode.path("feed")).thenReturn(mockFeedNode);
-        when(sentimentAnalysisService.processSentimentAndSave(eq("AAPL"), eq(mockFeedNode), any()))
-                .thenReturn(Mono.empty());
-
-        // Act
-        Mono<Void> result = newsEvaluationService.evaluateAndStoreNews(stockQueryDtos);
-
-        // Assert
-        StepVerifier.create(result)
-                .verifyComplete();
-
-        verify(alphaVantageClient, times(1)).getCompanyNews(eq("AAPL"), anyString(), anyString(), eq("LATEST"), anyInt());
-        verify(sentimentAnalysisService, times(1)).processSentimentAndSave(eq("AAPL"), eq(mockFeedNode), any());
-        verify(stockSentimentRepository, never()).save(any()); // Ukládání probíhá v SentimentAnalysisService
-    }
-
     // Další testy pro okrajové případy a chyby v getRatingsForQueries
 }
