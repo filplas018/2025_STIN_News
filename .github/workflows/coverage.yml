@@ -11,7 +11,7 @@ jobs:
         uses: actions/setup-java@v3
         with:
           java-version: '21'
-          distribution: 'temurin'
+          distribution: 'microsoft'
       - name: Build and Run Tests with Coverage
         run: mvn clean test jacoco:report
       - name: Upload Coverage to Codecov
