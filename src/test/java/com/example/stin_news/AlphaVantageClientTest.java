@@ -119,4 +119,5 @@ public class AlphaVantageClientTest {
         when(requestHeadersUriSpecMock.retrieve()).thenReturn(responseSpecMock);
         when(responseSpecMock.bodyToMono(String.class)).thenReturn(Mono.just(responseBody));
     }
+
 }
