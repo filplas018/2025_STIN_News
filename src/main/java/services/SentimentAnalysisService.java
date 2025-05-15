@@ -38,6 +38,11 @@ public class SentimentAnalysisService {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
 
+    public SentimentAnalysisService(StockSentimentRepository stockSentimentRepository) {
+        this.stockSentimentRepository = stockSentimentRepository;
+    }
+
+
 /*    * Metoda pro výpočet průměrného sentimentu pro daný ticker.
      *
      * @param feedNode JSON uzel s novinkami.
