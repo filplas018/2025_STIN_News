@@ -24,9 +24,10 @@ jobs:
       - name: Build and Run Tests with Coverage
         run: mvn clean test jacoco:report
       - name: Upload Coverage to Codecov
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v5 # Používáme novější verzi
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
+          slug: filplas018/2025_STIN_News # Přidáváme slug tvého repozitáře
           file: ./target/site/jacoco/jacoco.xml
           flags: unittests
           name: codecov-unit
