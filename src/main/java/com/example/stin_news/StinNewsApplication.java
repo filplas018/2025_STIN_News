@@ -8,7 +8,7 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
 
-@ComponentScan(basePackages = {"clients", "controllers", "config", "services", "models", "repositories", "seeders"})
+@ComponentScan(basePackages = {"clients", "controllers", "config", "services", "models", "repositories"})
 @SpringBootApplication(scanBasePackages = "com.example.stin_news")
 @EnableJpaRepositories(basePackages = "repositories")
 @EntityScan(basePackages = {"models"})
@@ -16,9 +16,9 @@ public class StinNewsApplication {
 
     public static void main(String[] args) {
 
-        Dotenv dotenv = Dotenv.configure()
+        /*Dotenv dotenv = Dotenv.configure()
                 .directory("./.azure/default") // Nastavte cestu k adresáři, kde se nachází .env
-                .load();
+                .load();*/
         SpringApplication.run(StinNewsApplication.class, args);
     }
 
