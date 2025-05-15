@@ -33,7 +33,7 @@
         <dependency>
             <groupId>com.azure.spring</groupId>
             <artifactId>spring-cloud-azure-starter-appconfiguration-config</artifactId>
-            <version>5.10.0</version>
+            <version>5.22.0</version>
         </dependency>
 
         <dependency>
