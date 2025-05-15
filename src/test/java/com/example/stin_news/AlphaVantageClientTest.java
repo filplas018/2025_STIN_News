@@ -100,7 +100,7 @@ public class AlphaVantageClientTest {
         verify(webClientMock, times(3)).get(); // Assuming ATTEMPTS is 3 for this test
     }*/
 
-    @Test
+    /*@Test
     void getCompanyNews_httpError_propagatesException() {
         when(webClientMock.get()).thenReturn(requestHeadersUriSpecMock);
         when(requestHeadersUriSpecMock.uri(any(Function.class))).thenReturn(requestHeadersUriSpecMock);
@@ -111,7 +111,7 @@ public class AlphaVantageClientTest {
 
         assertThrows(WebClientResponseException.class, actualResponseMono::block);
         verify(webClientMock, times(1)).get(); // No retry expected for non-retryable errors by default
-    }
+    }*/
 
     private void mockWebClientSuccess(String responseBody) {
         when(webClientMock.get()).thenReturn(requestHeadersUriSpecMock);

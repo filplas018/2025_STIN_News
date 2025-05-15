@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import static org.mockito.Mockito.*;
 import dtos.StockQueryDto;
 import models.StockSentiment;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -19,9 +20,7 @@ import services.NewsEvaluationService;
 import services.SentimentAnalysisService;
 
 import java.io.IOException;
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
+import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.List;
@@ -43,14 +42,32 @@ public class NewsEvaluationServiceTest {
     private StockSentimentRepository stockSentimentRepository;
 
 
-    @InjectMocks
-    private NewsEvaluationService newsScheduler;
+    // @InjectMocks
+    // private NewsEvaluationService newsScheduler;
 
     @Mock
     private ObjectMapper objectMapper;
 
     @InjectMocks
     private NewsEvaluationService newsEvaluationService;
+
+    @BeforeEach
+    void setUp() {
+        newsEvaluationService = new NewsEvaluationService(
+                alphaVantageClient,
+                stockSentimentRepository,
+                objectMapper
+        );
+
+        // Injektuj autowirovaný service ručně
+        ReflectionTestUtils.setField(newsEvaluationService, "sentimentAnalysisService", sentimentAnalysisService);
+
+        // Injektuj hodnoty z @Value
+        ReflectionTestUtils.setField(newsEvaluationService, "apiKey", "dummy-api-key");
+        ReflectionTestUtils.setField(newsEvaluationService, "BUSINESS_DAYS_BACK", 3);
+        ReflectionTestUtils.setField(newsEvaluationService, "NEWS_MIN", 2);
+        ReflectionTestUtils.setField(newsEvaluationService, "NEWS_MAX", 10);
+    }
 
     /*@Test
     void evaluateAndStoreNews_noExistingSentiment_fetchesAndSaves() throws IOException {
@@ -190,6 +207,52 @@ public class NewsEvaluationServiceTest {
                     assert dtos.get(0).getRating() == 0;
                 })
                 .verifyComplete();
+    }
+
+    @Test
+    void shouldDownloadAndStoreNewsIfNotAlreadyPresent() throws Exception {
+        // Arrange
+        String ticker = "AAPL";
+        long dateMillis = LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli();
+
+        StockQueryDto stockQuery = new StockQueryDto();
+        stockQuery.setName(ticker);
+        stockQuery.setDate(dateMillis);
+
+        when(stockSentimentRepository.findFirstByStockNameAndValidFromBetweenOrderByCreatedAtDesc(
+                anyString(), any(), any())
+        ).thenReturn(Optional.empty());
+
+        String mockResponse = """
+                {
+                  "feed": [
+                    { "title": "News 1", "summary": "Something happened" },
+                    { "title": "News 2", "summary": "Another thing" },
+                    { "title": "News 3", "summary": "More info" }
+                  ]
+                }
+                """;
+
+        JsonNode feedNode = new ObjectMapper().readTree(mockResponse).get("feed");
+
+        when(alphaVantageClient.getCompanyNews(anyString(), anyString(), anyString(), anyString(), anyInt()))
+                .thenReturn(Mono.just(mockResponse));
+
+        when(objectMapper.readTree(mockResponse)).thenReturn(new ObjectMapper().readTree(mockResponse));
+
+        when(sentimentAnalysisService.processSentimentAndSave(eq(ticker), eq(feedNode), any()))
+                .thenReturn(Mono.empty()); // Simulujeme uložení sentimentu
+
+        // Act
+        Mono<Void> result = newsEvaluationService.evaluateAndStoreNews(List.of(stockQuery));
+
+        // Assert
+        StepVerifier.create(result)
+                .verifyComplete();
+
+        // Verifikace
+        verify(alphaVantageClient, times(1)).getCompanyNews(anyString(), anyString(), anyString(), anyString(), anyInt());
+        verify(sentimentAnalysisService, times(1)).processSentimentAndSave(eq(ticker), eq(feedNode), any());
     }
 
     // Další testy pro okrajové případy a chyby v getRatingsForQueries
