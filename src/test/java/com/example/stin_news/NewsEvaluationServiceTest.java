@@ -51,6 +51,7 @@ public class NewsEvaluationServiceTest {
     @InjectMocks
     private NewsEvaluationService newsEvaluationService;
 
+
     @BeforeEach
     void setUp() {
         newsEvaluationService = new NewsEvaluationService(
@@ -256,4 +257,33 @@ public class NewsEvaluationServiceTest {
     }
 
     // Další testy pro okrajové případy a chyby v getRatingsForQueries
+
+
+    @Test
+    void evaluateAndStoreNews_emptyFeedFromAlphaVantage_skipsSentimentAnalysis() throws IOException {
+        // Arrange
+        StockQueryDto stockQueryDto = new StockQueryDto("AMC", (int)Instant.now().toEpochMilli());
+        List<StockQueryDto> stockQueryDtos = Collections.singletonList(stockQueryDto);
+        String emptyFeedResponse = "{\"feed\": []}";
+        JsonNode mockRootNode = objectMapper.readTree(emptyFeedResponse);
+        JsonNode mockFeedNode = mockRootNode != null ? mockRootNode.path("feed") : mock(JsonNode.class);
+
+        when(stockSentimentRepository.findFirstByStockNameAndValidFromBetweenOrderByCreatedAtDesc(eq("AMC"), any(), any()))
+                .thenReturn(Optional.empty());
+        when(alphaVantageClient.getCompanyNews(anyString(), anyString(), anyString(), anyString(), anyInt()))
+                .thenReturn(Mono.just(emptyFeedResponse));
+        when(objectMapper.readTree(eq(emptyFeedResponse))).thenReturn(mockRootNode);
+        if (mockRootNode != null) {
+            when(mockRootNode.path(eq("feed"))).thenReturn(mockFeedNode);
+            when(mockFeedNode.size()).thenReturn(0);
+        }
+
+        // Act
+        StepVerifier.create(newsEvaluationService.evaluateAndStoreNews(stockQueryDtos))
+                .verifyComplete();
+
+        // Assert
+        verify(sentimentAnalysisService, never()).processSentimentAndSave(anyString(), any(), any());
+        verify(stockSentimentRepository, never()).save(any());
+    }
 }
